@@ -82,7 +82,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
 const $=id=>document.getElementById(id);
 const NAMES=[["fajr","Subuh"],["dhuhr","Dzuhur"],["asr","Ashar"],["maghrib","Maghrib"],["isha","Isya"]];
 const SHOW=[["fajr","Subuh"],["sunrise","Terbit"],["dhuhr","Dzuhur"],["asr","Ashar"],["maghrib","Maghrib"],["isha","Isya"]];
-const DEF={off:{fajr:3,sunrise:3,dhuhr:4,asr:3,maghrib:4,isha:4},name:"Pekanbaru",lat:0.5071,lng:101.4478,txt:"Selamat datang. Jagalah kebersihan dan ketertiban bersama. Luruskan shaf, matikan HP saat sholat berjamaah."};
+const DEF={off:{fajr:3,sunrise:3,dhuhr:4,asr:3,maghrib:4,isha:4},name:"Fakultas tarbiyah dan Ilmu Keguruan",lat:0.5071,lng:101.4478,txt:"SELAMAT DATANG DI FAKULTAS TARBIYAH DAN ILMU KEGURUAN UIN MAHMUDYUNUS BATUSANGKAR."};
 let cfg={...DEF};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem("tvcfg")||"{}"))}catch(e){}
 
