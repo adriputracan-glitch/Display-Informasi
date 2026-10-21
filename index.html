@@ -33,6 +33,7 @@ main{flex:1;min-height:0;display:flex;gap:2vw;padding:1.5vh 4vw}
 footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow:hidden;white-space:nowrap}
 #tick{display:inline-block;padding-left:100%;font-size:3vh;animation:s 40s linear infinite}
 @keyframes s{to{transform:translateX(-100%)}}
+#cr{background:#053823;color:var(--mu);text-align:center;font-size:1.8vh;font-weight:600;letter-spacing:.05em;padding:.7vh 0}
 #adz{position:fixed;inset:0;background:radial-gradient(circle,#0f7a4d,#032a1b);display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;z-index:9}
 #adz.show{display:flex}
 #adz h1{font-size:14vh;margin:0;color:var(--ac)}
@@ -56,6 +57,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
 </main>
 <div id="next"></div><section id="cards"></section>
 <footer><div id="tick"></div></footer>
+<div id="cr">© 2026 Create By APC</div>
 
 <div id="adz" onclick="stopAdzan()"><h1 id="adzN"></h1><p>Waktunya sholat. Mari tinggalkan aktivitas sejenak.</p></div>
 
@@ -194,4 +196,3 @@ loadAssets();loadVid();loadAud();loadImg();loadInfo();tick();setInterval(tick,10
 </script>
 </body>
 </html>
-
