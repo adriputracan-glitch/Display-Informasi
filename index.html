@@ -12,10 +12,13 @@ body{background:var(--bg) center/cover no-repeat;color:var(--tx);font-family:sys
 header{display:flex;justify-content:space-between;align-items:center;padding:2.5vh 4vw 0}
 #place{font-size:2.2vh;color:var(--mu)}
 #gear{background:none;border:0;color:var(--mu);font-size:3vh;cursor:pointer;opacity:.5}
-main{flex:1;min-height:0;display:flex;padding:1.5vh 4vw}
-#info{flex:1;background:#05301fbb;border-radius:2vh;overflow:hidden;display:flex;align-items:center;justify-content:center;border:.3vh solid #f5c54266}
+main{flex:1;min-height:0;display:flex;gap:2vw;padding:1.5vh 4vw}
+#info{flex:1;min-width:0;background:#05301fbb;border-radius:2vh;overflow:hidden;display:flex;align-items:center;justify-content:center;border:.3vh solid #f5c54266}
 #slide{width:100%;height:100%;object-fit:contain;display:none}
 #empty{color:var(--mu);font-size:3vh;text-align:center;padding:0 4vw}
+#vbox{flex:1;min-width:0;background:#000;border-radius:2vh;overflow:hidden;display:flex;align-items:center;justify-content:center;border:.3vh solid #f5c54266}
+#vid{width:100%;height:100%;object-fit:contain;display:none}
+#vempty{color:var(--mu);font-size:3vh;text-align:center;padding:0 2vw}
 #tm{text-align:right}
 #clock{color:var(--ac)}
 #clock{font-size:8vh;font-weight:700;letter-spacing:.02em;line-height:1;font-variant-numeric:tabular-nums}
@@ -47,7 +50,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
 <button id="unlock">🔊 Klik sekali untuk mengaktifkan suara adzan</button>
 <header><div style="display:flex;align-items:center;gap:1.5vw"><img id="logo" alt="" style="display:none;height:10vh"><div id="place"></div></div><div style="display:flex;align-items:center;gap:1.5vw"><div id="tm"><div id="clock">--:--:--</div><div id="date"></div></div><button id="gear" title="Pengaturan (tombol S)">⚙</button></div></header>
 <main>
-  <div id="info"><img id="slide" alt=""><div id="empty">Belum ada informasi. Unggah gambar di pengaturan (ikon ⚙ atau tombol S).</div></div>
+  <div id="info"><img id="slide" alt=""><div id="empty">Belum ada informasi. Unggah gambar di pengaturan (ikon ⚙ atau tombol S).</div></div><div id="vbox"><video id="vid" muted loop autoplay playsinline></video><div id="vempty">Belum ada video. Taruh file video.mp4 atau unggah di pengaturan.</div></div>
   
   
 </main>
@@ -65,6 +68,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
   <label>Teks berjalan<textarea id="sTxt" rows="3"></textarea></label>
   <label>Gambar informasi / poster (boleh pilih banyak)<input id="sInfo" type="file" accept="image/*" multiple></label>
   <button id="sClr" type="button">Hapus semua gambar informasi</button>
+  <label>Video informasi (mp4, tampil di sisi kanan)<input id="sVid" type="file" accept="video/*"></label>
   <label>Logo UIN (gambar PNG/JPG)<input id="sLogo" type="file" accept="image/*"></label>
   <label>Background gedung UIN (gambar)<input id="sBg" type="file" accept="image/*"></label>
   <label>File suara adzan (mp3/wav, tersimpan di browser ini)<input id="sAud" type="file" accept="audio/*"></label>
@@ -76,7 +80,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
 const $=id=>document.getElementById(id);
 const NAMES=[["fajr","Subuh"],["dhuhr","Dzuhur"],["asr","Ashar"],["maghrib","Maghrib"],["isha","Isya"]];
 const SHOW=[["fajr","Subuh"],["sunrise","Terbit"],["dhuhr","Dzuhur"],["asr","Ashar"],["maghrib","Maghrib"],["isha","Isya"]];
-const DEF={off:{fajr:3,sunrise:3,dhuhr:4,asr:3,maghrib:4,isha:4},name:"Fakultas Tarbiyah dan Ilmu Keguruan",lat:0.5071,lng:101.4478,txt:"SELAMAT DATANG DI FAKULTAS TARBIYAH DAN ILMU KEGURUAN."};
+const DEF={off:{fajr:3,sunrise:3,dhuhr:4,asr:3,maghrib:4,isha:4},name:"Pekanbaru",lat:0.5071,lng:101.4478,txt:"Selamat datang. Jagalah kebersihan dan ketertiban bersama. Luruskan shaf, matikan HP saat sholat berjamaah."};
 let cfg={...DEF};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem("tvcfg")||"{}"))}catch(e){}
 
@@ -127,10 +131,13 @@ function adzan(name){
 }
 
 /* ---- file bawaan (taruh di folder yang sama dengan index.html) ---- */
-const ASSET={logo:"logo.png",bg:"background.jpg",adzan:"adzan.mp3",info:["info1.jpg","info2.jpg","info3.jpg"]};
+const ASSET={video:"video.mp4",logo:"logo.png",bg:"background.jpg",adzan:"adzan.mp3",info:["info1.jpg","info2.jpg","info3.jpg"]};
+function setVid(u){const v=$("vid");v.src=u;v.style.display="block";$("vempty").style.display="none";v.muted=true;v.play().catch(()=>{})}
+async function loadVid(){try{const db=await idb();const r=db.transaction("f").objectStore("f").get("video");r.onsuccess=()=>{if(r.result)setVid(URL.createObjectURL(r.result))}}catch(e){}}
 function loadAssets(){
   const a=new Image();a.onload=()=>{if($("logo").style.display==="none")setImg("logo",ASSET.logo)};a.src=ASSET.logo;
   const b=new Image();b.onload=()=>{if(!document.body.style.backgroundImage)setImg("bg",ASSET.bg)};b.src=ASSET.bg;
+  fetch(ASSET.video,{method:"HEAD"}).then(r=>{if(r.ok&&/video|octet/.test(r.headers.get("content-type")||"")&&!$("vid").getAttribute("src"))setVid(ASSET.video)}).catch(()=>{});
   fetch(ASSET.adzan,{method:"HEAD"}).then(r=>{if(r.ok&&/audio|octet/.test(r.headers.get("content-type")||"")&&!customURL){customURL=ASSET.adzan;A.src=customURL}}).catch(()=>{});
 }
 /* ---- slide informasi ---- */
@@ -176,12 +183,13 @@ $("sSave").onclick=async()=>{
   try{localStorage.setItem("tvcfg",JSON.stringify(cfg))}catch(e){}
   const f=$("sAud").files[0];if(f){await saveAud(f);customURL=URL.createObjectURL(f);A.src=customURL}
   for(const[k,id]of[["bg","sBg"],["logo","sLogo"]]){const g=$(id).files[0];if(g){await saveAud(g,k);setImg(k,URL.createObjectURL(g))}}
+  const vf=$("sVid").files[0];if(vf){await saveAud(vf,"video");setVid(URL.createObjectURL(vf))}
   const fi=[...$("sInfo").files];if(fi.length){const old=await getInfo();await setInfo(old.concat(fi));await loadInfo();$("sInfo").value=""}
   day=-1;$("set").classList.remove("show");
 };
 $("sTest").onclick=()=>{unlock();adzan("Tes Adzan")};
 $("sClr").onclick=async()=>{await setInfo([]);await loadInfo()};
-loadAssets();loadAud();loadImg();loadInfo();tick();setInterval(tick,1000);
+loadAssets();loadVid();loadAud();loadImg();loadInfo();tick();setInterval(tick,1000);
 </script>
 </body>
 </html>
