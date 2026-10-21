@@ -47,7 +47,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
 </style>
 </head>
 <body>
-<button id="unlock">🔊 Klik sekali untuk mengaktifkan suara adzan</button>
+<button id="unlock">🔊 Klik / tekan OK sekali untuk mengaktifkan suara adzan & video</button>
 <header><div style="display:flex;align-items:center;gap:1.5vw"><img id="logo" alt="" style="display:none;height:10vh"><div id="place"></div></div><div style="display:flex;align-items:center;gap:1.5vw"><div id="tm"><div id="clock">--:--:--</div><div id="date"></div></div><button id="gear" title="Pengaturan (tombol S)">⚙</button></div></header>
 <main>
   <div id="info"><img id="slide" alt=""><div id="empty">Belum ada informasi. Unggah gambar di pengaturan (ikon ⚙ atau tombol S).</div></div><div id="vbox"><video id="vid" muted loop autoplay playsinline></video><div id="vempty">Belum ada video. Taruh file video.mp4 atau unggah di pengaturan.</div></div>
@@ -113,7 +113,7 @@ function setImg(k,u){if(k==="bg")document.body.style.backgroundImage=`linear-gra
 async function loadImg(){try{const db=await idb();for(const k of["bg","logo"]){const r=db.transaction("f").objectStore("f").get(k);r.onsuccess=()=>{if(r.result)setImg(k,URL.createObjectURL(r.result))}}}catch(e){}}
 async function loadAud(){try{const db=await idb();const r=db.transaction("f").objectStore("f").get("adzan");r.onsuccess=()=>{if(r.result){customURL=URL.createObjectURL(r.result);A.src=customURL}}}catch(e){}}
 function unlock(){
-  if(unlocked)return;unlocked=true;$("unlock").style.display="none";
+  if(unlocked)return;unlocked=true;$("unlock").style.display="none";vidSound(true);$("vid").play().catch(()=>{});
   try{ctx=new (window.AudioContext||window.webkitAudioContext)();ctx.resume()}catch(e){}
   if(customURL){A.muted=true;A.play().then(()=>{A.pause();A.currentTime=0;A.muted=false}).catch(()=>{A.muted=false})}
 }
@@ -122,17 +122,18 @@ function beep(){ // cadangan jika belum ada file adzan
   if(!ctx)return;[0,.9,1.8].forEach(s=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;o.connect(g);g.connect(ctx.destination);
   const t=ctx.currentTime+s;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.4,t+.05);g.gain.exponentialRampToValueAtTime(.0001,t+.8);o.start(t);o.stop(t+.85)});
 }
-function stopAdzan(){A.pause();A.currentTime=0;A.onended=null;$("adz").classList.remove("show")}
-function adzan(name){
+function stopAdzan(){A.pause();A.currentTime=0;A.onended=null;$("adz").classList.remove("show");vidSound(true)}
+function adzan(name){vidSound(false);
   $("adzN").textContent=name;$("adz").classList.add("show");
-  const done=()=>setTimeout(()=>$("adz").classList.remove("show"),15000);
+  const done=()=>setTimeout(()=>{$("adz").classList.remove("show");vidSound(true)},15000);
   if(customURL){A.currentTime=0;A.play().catch(()=>{});A.onended=done}
-  else{beep();setTimeout(()=>$("adz").classList.remove("show"),8000)}
+  else{beep();setTimeout(()=>{$("adz").classList.remove("show");vidSound(true)},8000)}
 }
 
 /* ---- file bawaan (taruh di folder yang sama dengan index.html) ---- */
 const ASSET={video:"video.mp4",logo:"logo.png",bg:"background.jpg",adzan:"adzan.mp3",info:["info1.jpg","info2.jpg","info3.jpg"]};
-function setVid(u){const v=$("vid");v.src=u;v.style.display="block";$("vempty").style.display="none";v.muted=true;v.play().catch(()=>{})}
+function vidSound(on){$("vid").muted=!(on&&unlocked)}
+function setVid(u){const v=$("vid");v.src=u;v.style.display="block";$("vempty").style.display="none";vidSound(true);v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}
 async function loadVid(){try{const db=await idb();const r=db.transaction("f").objectStore("f").get("video");r.onsuccess=()=>{if(r.result)setVid(URL.createObjectURL(r.result))}}catch(e){}}
 function loadAssets(){
   const a=new Image();a.onload=()=>{if($("logo").style.display==="none")setImg("logo",ASSET.logo)};a.src=ASSET.logo;
