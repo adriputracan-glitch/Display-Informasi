@@ -126,12 +126,21 @@ function adzan(name){
   else{beep();setTimeout(()=>$("adz").classList.remove("show"),8000)}
 }
 
+/* ---- file bawaan (taruh di folder yang sama dengan index.html) ---- */
+const ASSET={logo:"logo.png",bg:"background.jpg",adzan:"adzan.mp3",info:["info1.jpg","info2.jpg","info3.jpg"]};
+function loadAssets(){
+  const a=new Image();a.onload=()=>{if($("logo").style.display==="none")setImg("logo",ASSET.logo)};a.src=ASSET.logo;
+  const b=new Image();b.onload=()=>{if(!document.body.style.backgroundImage)setImg("bg",ASSET.bg)};b.src=ASSET.bg;
+  fetch(ASSET.adzan,{method:"HEAD"}).then(r=>{if(r.ok&&/audio|octet/.test(r.headers.get("content-type")||"")&&!customURL){customURL=ASSET.adzan;A.src=customURL}}).catch(()=>{});
+}
 /* ---- slide informasi ---- */
 let slides=[],si=0;
 async function getInfo(){try{const db=await idb();return await new Promise(ok=>{const r=db.transaction("f").objectStore("f").get("info");r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])})}catch(e){return[]}}
 async function setInfo(a){try{const db=await idb();db.transaction("f","readwrite").objectStore("f").put(a,"info")}catch(e){}}
 function showSlide(){const has=slides.length>0;$("slide").style.display=has?"block":"none";$("empty").style.display=has?"none":"block";if(has)$("slide").src=slides[si%slides.length]}
-async function loadInfo(){const a=await getInfo();slides=a.map(b=>URL.createObjectURL(b));si=0;showSlide()}
+async function loadInfo(){const a=await getInfo();slides=a.map(b=>URL.createObjectURL(b));
+  if(!slides.length){const ok=await Promise.all(ASSET.info.map(u=>new Promise(r=>{const i=new Image();i.onload=()=>r(u);i.onerror=()=>r(null);i.src=u})));slides=ok.filter(Boolean)}
+  si=0;showSlide()}
 setInterval(()=>{if(slides.length>1){si=(si+1)%slides.length;showSlide()}},10000);
 /* ---- tampilan ---- */
 let times=null,day=-1,fired={};
@@ -172,7 +181,7 @@ $("sSave").onclick=async()=>{
 };
 $("sTest").onclick=()=>{unlock();adzan("Tes Adzan")};
 $("sClr").onclick=async()=>{await setInfo([]);await loadInfo()};
-loadAud();loadImg();loadInfo();tick();setInterval(tick,1000);
+loadAssets();loadAud();loadImg();loadInfo();tick();setInterval(tick,1000);
 </script>
 </body>
 </html>
