@@ -115,10 +115,20 @@ function setImg(k,u){if(k==="bg")document.body.style.backgroundImage=`linear-gra
 async function loadImg(){try{const db=await idb();for(const k of["bg","logo"]){const r=db.transaction("f").objectStore("f").get(k);r.onsuccess=()=>{if(r.result)setImg(k,URL.createObjectURL(r.result))}}}catch(e){}}
 async function loadAud(){try{const db=await idb();const r=db.transaction("f").objectStore("f").get("adzan");r.onsuccess=()=>{if(r.result){customURL=URL.createObjectURL(r.result);A.src=customURL}}}catch(e){}}
 function unlock(){
-  if(unlocked)return;unlocked=true;$("unlock").style.display="none";vidSound(true);$("vid").play().catch(()=>{});
+  if(unlocked)return;unlocked=true;$("unlock").style.display="none";
   try{ctx=new (window.AudioContext||window.webkitAudioContext)();ctx.resume()}catch(e){}
+  const v=$("vid");
+  if(v.getAttribute("src")){
+    v.muted=false;
+    const p=v.play();
+    if(p)p.catch(()=>{v.muted=true;v.play().catch(()=>{})});
+  }
   if(customURL){A.muted=true;A.play().then(()=>{A.pause();A.currentTime=0;A.muted=false}).catch(()=>{A.muted=false})}
 }
+
+/* watchdog: kalau video terjeda sendiri, jalankan lagi */
+setInterval(()=>{const v=$("vid");if(v.getAttribute("src")&&v.paused&&!v.ended)v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})},3000);
+  
 ["click","keydown","touchstart"].forEach(ev=>addEventListener(ev,unlock,{once:false}));
 function beep(){ // cadangan jika belum ada file adzan
   if(!ctx)return;[0,.9,1.8].forEach(s=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;o.connect(g);g.connect(ctx.destination);
