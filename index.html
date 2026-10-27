@@ -83,7 +83,7 @@ footer{background:#f5c542;color:#053823;font-weight:600;padding:1.6vh 0;overflow
 const $=id=>document.getElementById(id);
 const NAMES=[["fajr","Subuh"],["dhuhr","Dzuhur"],["asr","Ashar"],["maghrib","Maghrib"],["isha","Isya"]];
 const SHOW=[["fajr","Subuh"],["sunrise","Terbit"],["dhuhr","Dzuhur"],["asr","Ashar"],["maghrib","Maghrib"],["isha","Isya"]];
-const DEF={off:{fajr:3,sunrise:3,dhuhr:4,asr:3,maghrib:4,isha:4},name:"Fakultas Tarbiyah dan Ilmu Keguruan",lat:0.5071,lng:101.4478,txt:"SELAMAT DATANG DI FAKULTAS TARBIYAH DAN ILMU KEGURUAN UIN MAHMUD YUNUS BATUSANGKAR."};
+const DEF={off:{fajr:3,sunrise:3,dhuhr:4,asr:3,maghrib:4,isha:4},name:"Fakultas Tarbiyah dan Ilmu Keguruan",lat:0.5071,lng:101.4478,txt:"SELAMAT DATANG DI FAKULTAS TARBIYAH UNIVERSITAS ISLAM NEGERI MAHMUD YUNUS BATUSANGKAR."};
 let cfg={...DEF};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem("tvcfg")||"{}"))}catch(e){}
 
@@ -119,7 +119,7 @@ function unlock(){
   if(unlocked)return;unlocked=true;$("unlock").style.display="none";
   try{ctx=new (window.AudioContext||window.webkitAudioContext)();ctx.resume()}catch(e){}
   const v=$("vid");
-  if(v.getAttribute("src")){
+  if(v.getAttribute("src")&&!adzOn){
     v.muted=false;
     const p=v.play();
     if(p)p.catch(()=>{v.muted=true;v.play().catch(()=>{})});
@@ -127,29 +127,43 @@ function unlock(){
   if(customURL){A.muted=true;A.play().then(()=>{A.pause();A.currentTime=0;A.muted=false}).catch(()=>{A.muted=false})}
 }
 /* watchdog: kalau video terjeda sendiri, jalankan lagi */
-setInterval(()=>{const v=$("vid");if(v.getAttribute("src")&&v.paused&&!v.ended)v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})},3000);
+setInterval(()=>{const v=$("vid");if(!adzOn&&v.getAttribute("src")&&v.paused&&!v.ended)v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})},3000);
 ["click","keydown","touchstart"].forEach(ev=>addEventListener(ev,unlock,{once:false}));
 function beep(){ // cadangan jika belum ada file adzan
   if(!ctx)return;[0,.9,1.8].forEach(s=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=660;o.connect(g);g.connect(ctx.destination);
   const t=ctx.currentTime+s;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.4,t+.05);g.gain.exponentialRampToValueAtTime(.0001,t+.8);o.start(t);o.stop(t+.85)});
 }
-function stopAdzan(){A.pause();A.currentTime=0;A.onended=null;$("adz").classList.remove("show");vidSound(true)}
-function adzan(name){vidSound(false);
+let adzOn=false,adzT=null;
+function endAdzan(){
+  clearTimeout(adzT);adzT=null;
+  A.pause();A.currentTime=0;A.onended=null;A.onerror=null;
+  $("adz").classList.remove("show");
+  const was=adzOn;adzOn=false;
+  vidSound(true);
+  if(was){const v=$("vid");if(v.getAttribute("src"))v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}
+}
+function stopAdzan(){endAdzan()}
+function adzan(name){
+  clearTimeout(adzT);
+  adzOn=true;const v=$("vid");v.pause();v.muted=true; // video berhenti selama adzan
   $("adzN").textContent=name;$("adz").classList.add("show");
-  const done=()=>setTimeout(()=>{$("adz").classList.remove("show");vidSound(true)},15000);
-  if(customURL){A.currentTime=0;A.play().catch(()=>{});A.onended=done}
-  else{beep();setTimeout(()=>{$("adz").classList.remove("show");vidSound(true)},8000)}
+  const later=ms=>{clearTimeout(adzT);adzT=setTimeout(endAdzan,ms)};
+  later(10*60*1000); // batas aman maksimal 10 menit
+  if(customURL){
+    A.currentTime=0;A.onended=()=>later(15000);A.onerror=()=>later(8000);
+    const p=A.play();if(p)p.catch(()=>{beep();later(60000)});
+  }else{beep();later(8000)}
 }
 
 /* ---- file bawaan (taruh di folder yang sama dengan index.html) ---- */
 const ASSET={videos:["video1.mp4","video2.mp4","video3.mp4","video.mp4"],logo:"logo.png",bg:"background.jpg",adzan:"adzan.mp3",info:["info1.jpg","info2.jpg","info3.jpg"]};
-function vidSound(on){$("vid").muted=!(on&&unlocked)}
+function vidSound(on){$("vid").muted=!(on&&unlocked&&!adzOn)}
 /* ---- playlist video ---- */
 let vids=[],vi=0;
 function playVid(){
   if(!vids.length)return;
   const v=$("vid");v.src=vids[vi%vids.length];v.style.display="block";$("vempty").style.display="none";
-  vidSound(true);v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})});
+  vidSound(true);if(adzOn)return;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})});
 }
 function nextVid(){if(!vids.length)return;vi=(vi+1)%vids.length;playVid()}
 $("vid").addEventListener("ended",nextVid);
